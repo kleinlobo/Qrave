@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════
+   CUSTOMER APP — Light Mode
+   Applied when <html data-app="customer">
+   ═══════════════════════════════════════════════ */
+[data-app="customer"] {
+  --background: #FBF6EF;
+  --surface: #FFFFFF;
+  --surface-muted: #F3EBE0;
+  --foreground: #2B211A;
+  --foreground-muted: #7A6A5C;
+  --border: #E4D8C9;
+  --primary: #0ABAB5;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #089E9A;
+  --accent-warm: #E8773F;
+  --success: #3FA34D;
+  --warning: #E0A526;
+  --destructive: #D6483F;
+  --destructive-foreground: #FFFFFF;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius: 0.5rem;
+
+  --shadow-sm: 0 1px 2px 0 rgb(43 33 26 / 0.06);
+  --shadow-md: 0 4px 12px -2px rgb(43 33 26 / 0.10);
+  --shadow-lg: 0 12px 28px -4px rgb(43 33 26 / 0.14);
+
+  /* shadcn/ui compat */
+  --muted: #F3EBE0;
+  --muted-foreground: #7A6A5C;
+  --card: #FFFFFF;
+  --card-foreground: #2B211A;
+  --popover: #FFFFFF;
+  --popover-foreground: #2B211A;
+  --secondary: #F3EBE0;
+  --secondary-foreground: #2B211A;
+  --accent: #F3EBE0;
+  --accent-foreground: #2B211A;
+  --input: #E4D8C9;
+  --ring: #0ABAB5;
+}
+
+/* ═══════════════════════════════════════════════
+   CUSTOMER APP — Dark Mode
+   Applied when <html data-app="customer" class="dark">
+   ═══════════════════════════════════════════════ */
+[data-app="customer"].dark {
+  --background: #231A14;
+  --surface: #2E2219;
+  --surface-muted: #3A2C20;
+  --foreground: #F5EDE3;
+  --foreground-muted: #B5A493;
+  --border: #4A3A2C;
+  --primary: #1DD4CE;
+  --primary-foreground: #1A2E2D;
+  --primary-hover: #3DE8E2;
+  --accent-warm: #F08A55;
+  --success: #5FC470;
+  --warning: #F0BD4E;
+  --destructive: #E8716A;
+  --destructive-foreground: #1A1413;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 12px 28px -4px rgb(0 0 0 / 0.6);
+
+  /* shadcn/ui compat */
+  --muted: #3A2C20;
+  --muted-foreground: #B5A493;
+  --card: #2E2219;
+  --card-foreground: #F5EDE3;
+  --popover: #2E2219;
+  --popover-foreground: #F5EDE3;
+  --secondary: #3A2C20;
+  --secondary-foreground: #F5EDE3;
+  --accent: #3A2C20;
+  --accent-foreground: #F5EDE3;
+  --input: #4A3A2C;
+  --ring: #1DD4CE;
+}
+
+/* ═══════════════════════════════════════════════
+   INTERNAL SYSTEM — Light Mode (slate theme)
+   Applied when <html data-app="internal">
+   Dashboard, Kitchen Display, Admin Panel
+   ═══════════════════════════════════════════════ */
+[data-app="internal"] {
+  --background: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-muted: #F1F5F9;
+  --foreground: #0F172A;
+  --foreground-muted: #64748B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --border: #E2E8F0;
+  --primary: #0F172A;
+  --primary-foreground: #F8FAFC;
+  --primary-hover: #1E293B;
+  --accent-warm: #E8773F;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --success: #16A34A;
+  --warning: #D97706;
+  --info: #0284C7;
+
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.10);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10);
+
+  /* shadcn/ui compat */
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
+  --input: #E2E8F0;
+  --ring: #0F172A;
+}
+
+/* ═══════════════════════════════════════════════
+   INTERNAL SYSTEM — Dark Mode (slate theme)
+   Applied when <html data-app="internal" class="dark">
+   ═══════════════════════════════════════════════ */
+[data-app="internal"].dark {
+  --background: #0F172A;
+  --surface: #0F172A;
+  --surface-muted: #1E293B;
+  --foreground: #F8FAFC;
+  --foreground-muted: #94A3B8;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --border: #334155;
+  --primary: #F8FAFC;
+  --primary-foreground: #0F172A;
+  --primary-hover: #E2E8F0;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --info: #38BDF8;
+
+  --card: #0F172A;
+  --card-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+  --accent: #1E293B;
+  --accent-foreground: #F8FAFC;
+  --input: #334155;
+  --ring: #F8FAFC;
+}
+
+/* ═══════════════════════════════════════════════
+   GLOBAL BASE STYLES
+   ═══════════════════════════════════════════════ */
+:root {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbar utility — used by category chips & horizontal card rows */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+}
