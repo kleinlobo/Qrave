@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { getGPSPosition, isWithinRadius } from "@/lib/geo"
+import MenuFeed from "@/components/menu/MenuFeed"
+import type { MenuCategory } from "@/lib/menu/types"
 
 interface Props {
   restaurantId: string
@@ -14,13 +16,14 @@ interface Props {
   regionLockRadius: number
   sessionExpiryMinutes: number
   currency: string
+  menuCategories: MenuCategory[]
 }
 
 type SessionState =
   | { phase: "booting" }
   | { phase: "region_blocked" }
   | { phase: "error"; message: string }
-  | { phase: "ready"; sessionId: string; regionCheckStatus: string }
+  | { phase: "ready" }
 
 export default function SessionBootstrap({
   restaurantId,
@@ -31,6 +34,8 @@ export default function SessionBootstrap({
   restaurantLon,
   regionLockRadius,
   sessionExpiryMinutes,
+  currency,
+  menuCategories,
 }: Props) {
   const [state, setState] = useState<SessionState>({ phase: "booting" })
   const didRun = useRef(false)
@@ -50,12 +55,15 @@ export default function SessionBootstrap({
       if (!user) {
         const { error } = await supabase.auth.signInAnonymously()
         if (error) {
-          setState({ phase: "error", message: "Could not start a session. Please try scanning again." })
+          setState({
+            phase: "error",
+            message: "Could not start a session. Please try scanning again.",
+          })
           return
         }
       }
 
-      // Attempt GPS for region check (best effort — 8s timeout)
+      // Attempt GPS region check (best effort, 8s timeout baked into getGPSPosition)
       let gpsLat: number | undefined
       let gpsLon: number | undefined
 
@@ -64,7 +72,7 @@ export default function SessionBootstrap({
         gpsLat = position.coords.latitude
         gpsLon = position.coords.longitude
 
-        // Client-side fast path: reject immediately if out of range
+        // Fast-path client rejection before hitting the server
         if (restaurantLat != null && restaurantLon != null) {
           if (!isWithinRadius(gpsLat, gpsLon, restaurantLat, restaurantLon, regionLockRadius)) {
             setState({ phase: "region_blocked" })
@@ -72,10 +80,9 @@ export default function SessionBootstrap({
           }
         }
       } catch {
-        // GPS unavailable or denied — server will fall back to IP geo
+        // GPS unavailable or denied — server falls back to IP geo
       }
 
-      // Bootstrap session via Route Handler
       const res = await fetch("/api/session/bootstrap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,7 +111,7 @@ export default function SessionBootstrap({
         return
       }
 
-      setState({ phase: "ready", sessionId: data.sessionId, regionCheckStatus: data.regionCheckStatus })
+      setState({ phase: "ready" })
     }
 
     boot()
@@ -154,14 +161,11 @@ export default function SessionBootstrap({
     )
   }
 
-  // Phase 6 will replace this placeholder with the full menu feed
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="text-center space-y-2">
-        <p className="text-lg font-semibold text-foreground">{restaurantName}</p>
-        <p className="text-sm text-foreground-muted">Table {tableLabel} &middot; Session ready</p>
-        <p className="text-xs text-foreground-muted opacity-60 mt-4">Menu coming in Phase 6</p>
-      </div>
-    </div>
+    <MenuFeed
+      categories={menuCategories}
+      currency={currency}
+      restaurantName={restaurantName}
+    />
   )
 }

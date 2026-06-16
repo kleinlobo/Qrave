@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { createServiceClient } from "@/lib/supabase/server"
 import { verifyQRToken } from "@/lib/qr"
 import SessionBootstrap from "@/components/session/SessionBootstrap"
+import type { MenuCategory } from "@/lib/menu/types"
 
 interface Props {
   params: { restaurantId: string; tableId: string }
@@ -29,13 +30,30 @@ export default async function CustomerMenuPage({ params, searchParams }: Props) 
 
   if (!table) notFound()
 
-  const { data: restaurant } = await supabase
-    .from("restaurants")
-    .select(
-      "id, name, currency, locale, latitude, longitude, region_lock_radius_meters, maintenance_mode, subscription_status, ordering_channels, branding, session_expiry_minutes"
-    )
-    .eq("id", restaurantId)
-    .single()
+  // Fetch restaurant and menu in parallel
+  const [{ data: restaurant }, { data: categories }, { data: items }] = await Promise.all([
+    supabase
+      .from("restaurants")
+      .select(
+        "id, name, currency, latitude, longitude, region_lock_radius_meters, maintenance_mode, subscription_status, session_expiry_minutes"
+      )
+      .eq("id", restaurantId)
+      .single(),
+
+    supabase
+      .from("menu_categories")
+      .select("id, name, display_order")
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true)
+      .order("display_order"),
+
+    supabase
+      .from("menu_items")
+      .select("id, category_id, name, description, price, video_url, thumbnail_url, dietary_tags, display_order")
+      .eq("restaurant_id", restaurantId)
+      .eq("is_available", true)
+      .order("display_order"),
+  ])
 
   if (!restaurant) notFound()
 
@@ -68,6 +86,12 @@ export default async function CustomerMenuPage({ params, searchParams }: Props) 
     )
   }
 
+  // Build menu category tree
+  const menuCategories: MenuCategory[] = (categories ?? []).map((cat) => ({
+    ...cat,
+    items: (items ?? []).filter((item) => item.category_id === cat.id),
+  }))
+
   return (
     <SessionBootstrap
       restaurantId={restaurantId}
@@ -79,6 +103,7 @@ export default async function CustomerMenuPage({ params, searchParams }: Props) 
       regionLockRadius={restaurant.region_lock_radius_meters}
       sessionExpiryMinutes={restaurant.session_expiry_minutes}
       currency={restaurant.currency}
+      menuCategories={menuCategories}
     />
   )
 }
