@@ -1,16 +1,53 @@
 import { getStaffUser } from "@/lib/auth/get-staff-user"
+import { createClient } from "@/lib/supabase/server"
+import LiveOrderBoard from "@/components/dashboard/LiveOrderBoard"
+import type { LiveOrder } from "@/components/dashboard/OrderCard"
+
+const ACTIVE_STATUSES = ["pending", "preparing", "ready"]
+
+export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const staff = await getStaffUser()
+  const staffUser = await getStaffUser()
+  if (!staffUser) return null
+
+  const restaurantId = staffUser.restaurant_id
+  if (!restaurantId) return null
+  const supabase = createClient()
+
+  const [{ data: restaurant }, { data: orders }] = await Promise.all([
+    supabase
+      .from("restaurants")
+      .select("name, currency")
+      .eq("id", restaurantId)
+      .single(),
+
+    supabase
+      .from("orders")
+      .select(
+        "id, status, estimated_total, submitted_at, table_id, tables(label), order_items(id, item_name_snapshot, quantity, price_snapshot, notes, is_removed)"
+      )
+      .eq("restaurant_id", restaurantId)
+      .in("status", ACTIVE_STATUSES)
+      .order("submitted_at", { ascending: true }),
+  ])
+
+  const currency = restaurant?.currency ?? "USD"
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-foreground">Restaurant Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Signed in as {staff?.name} &middot; {staff?.role}
-        </p>
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">{restaurant?.name ?? "Dashboard"}</h1>
+          <p className="text-sm text-muted-foreground">Live orders</p>
+        </div>
       </div>
-    </main>
+
+      <LiveOrderBoard
+        restaurantId={staffUser.restaurant_id}
+        currency={currency}
+        initialOrders={(orders ?? []) as LiveOrder[]}
+      />
+    </div>
   )
 }
