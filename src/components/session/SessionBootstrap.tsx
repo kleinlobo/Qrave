@@ -166,6 +166,8 @@ export default function SessionBootstrap({
       categories={menuCategories}
       currency={currency}
       restaurantName={restaurantName}
+      restaurantId={restaurantId}
+      tableLabel={tableLabel}
     />
   )
 }

@@ -5,35 +5,40 @@ import { CartProvider } from "@/lib/cart/CartContext"
 import CategoryChips from "./CategoryChips"
 import MenuItemCard from "./MenuItemCard"
 import CartFab from "@/components/cart/CartFab"
+import CartSheet from "@/components/cart/CartSheet"
+import OrderStatusSheet from "@/components/order/OrderStatusSheet"
 import type { MenuCategory, MenuItem } from "@/lib/menu/types"
 
 interface Props {
   categories: MenuCategory[]
   currency: string
   restaurantName: string
+  restaurantId: string
+  tableLabel: string
 }
 
 interface FlatItem extends MenuItem {
   categoryId: string
 }
 
-export default function MenuFeed({ categories, currency, restaurantName }: Props) {
+export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel }: Props) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     categories[0]?.id ?? null
   )
+  const [cartOpen, setCartOpen] = useState(false)
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
 
   const feedRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
-  // Flatten all items in display order, retaining their category
   const allItems: FlatItem[] = categories.flatMap((cat) =>
     cat.items.map((item) => ({ ...item, categoryId: cat.id }))
   )
 
-  // Track which category is active as user scrolls
+  // Track active category while scrolling
   useEffect(() => {
     const feed = feedRef.current
-    if (!feed) return
+    if (!feed || allItems.length === 0) return
 
     const observers: IntersectionObserver[] = []
 
@@ -76,9 +81,13 @@ export default function MenuFeed({ categories, currency, restaurantName }: Props
   return (
     <CartProvider>
       <div className="relative h-screen overflow-hidden">
-        {/* Sticky category chips overlay */}
-        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
+        {/* Sticky header — restaurant name, table label, category chips */}
+        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
           <div className="pointer-events-auto">
+            <div className="flex items-baseline justify-between px-5 pt-4 pb-1">
+              <p className="text-white text-sm font-semibold truncate">{restaurantName}</p>
+              <p className="text-white/70 text-xs ml-3 flex-shrink-0">Table {tableLabel}</p>
+            </div>
             <CategoryChips
               categories={categories}
               activeId={activeCategoryId}
@@ -105,8 +114,27 @@ export default function MenuFeed({ categories, currency, restaurantName }: Props
           ))}
         </div>
 
-        {/* Floating cart button — opens cart sheet (Phase 7) */}
-        <CartFab currency={currency} onOpen={() => {}} />
+        {/* Cart FAB */}
+        <CartFab currency={currency} onOpen={() => setCartOpen(true)} />
+
+        {/* Cart sheet */}
+        <CartSheet
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          currency={currency}
+          restaurantId={restaurantId}
+          onOrderPlaced={(orderId) => {
+            setCartOpen(false)
+            setActiveOrderId(orderId)
+          }}
+        />
+
+        {/* Order status sheet */}
+        <OrderStatusSheet
+          orderId={activeOrderId}
+          currency={currency}
+          onClose={() => setActiveOrderId(null)}
+        />
       </div>
     </CartProvider>
   )
