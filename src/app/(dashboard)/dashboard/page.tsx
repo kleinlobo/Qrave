@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       </div>
 
       <LiveOrderBoard
-        restaurantId={staffUser.restaurant_id}
+        restaurantId={restaurantId}
         currency={currency}
         initialOrders={(orders ?? []) as LiveOrder[]}
       />
