@@ -16,6 +16,7 @@ interface Props {
   regionLockRadius: number
   sessionExpiryMinutes: number
   currency: string
+  groupOrderingEnabled: boolean
   menuCategories: MenuCategory[]
 }
 
@@ -35,6 +36,7 @@ export default function SessionBootstrap({
   regionLockRadius,
   sessionExpiryMinutes,
   currency,
+  groupOrderingEnabled,
   menuCategories,
 }: Props) {
   const [state, setState] = useState<SessionState>({ phase: "booting" })
@@ -168,6 +170,7 @@ export default function SessionBootstrap({
       restaurantName={restaurantName}
       restaurantId={restaurantId}
       tableLabel={tableLabel}
+      groupOrderingEnabled={groupOrderingEnabled}
     />
   )
 }

@@ -35,7 +35,7 @@ export default async function CustomerMenuPage({ params, searchParams }: Props) 
     supabase
       .from("restaurants")
       .select(
-        "id, name, currency, latitude, longitude, region_lock_radius_meters, maintenance_mode, subscription_status, session_expiry_minutes"
+        "id, name, currency, latitude, longitude, region_lock_radius_meters, maintenance_mode, subscription_status, session_expiry_minutes, group_ordering_enabled"
       )
       .eq("id", restaurantId)
       .single(),
@@ -103,6 +103,7 @@ export default async function CustomerMenuPage({ params, searchParams }: Props) 
       regionLockRadius={restaurant.region_lock_radius_meters}
       sessionExpiryMinutes={restaurant.session_expiry_minutes}
       currency={restaurant.currency}
+      groupOrderingEnabled={restaurant.group_ordering_enabled}
       menuCategories={menuCategories}
     />
   )

@@ -7,6 +7,7 @@ import MenuItemCard from "./MenuItemCard"
 import CartFab from "@/components/cart/CartFab"
 import CartSheet from "@/components/cart/CartSheet"
 import OrderStatusSheet from "@/components/order/OrderStatusSheet"
+import RequestSheet from "@/components/requests/RequestSheet"
 import type { MenuCategory, MenuItem } from "@/lib/menu/types"
 
 interface Props {
@@ -15,18 +16,20 @@ interface Props {
   restaurantName: string
   restaurantId: string
   tableLabel: string
+  groupOrderingEnabled: boolean
 }
 
 interface FlatItem extends MenuItem {
   categoryId: string
 }
 
-export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel }: Props) {
+export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel, groupOrderingEnabled }: Props) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     categories[0]?.id ?? null
   )
   const [cartOpen, setCartOpen] = useState(false)
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
+  const [requestSheetOpen, setRequestSheetOpen] = useState(false)
 
   const feedRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -84,9 +87,18 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
         {/* Sticky header — restaurant name, table label, category chips */}
         <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
           <div className="pointer-events-auto">
-            <div className="flex items-baseline justify-between px-5 pt-4 pb-1">
+            <div className="flex items-center justify-between px-5 pt-4 pb-1">
               <p className="text-white text-sm font-semibold truncate">{restaurantName}</p>
-              <p className="text-white/70 text-xs ml-3 flex-shrink-0">Table {tableLabel}</p>
+              <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                <p className="text-white/70 text-xs">Table {tableLabel}</p>
+                <button
+                  onClick={() => setRequestSheetOpen(true)}
+                  aria-label="More options"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white/90 active:bg-black/60 transition-colors"
+                >
+                  <span className="text-base leading-none">···</span>
+                </button>
+              </div>
             </div>
             <CategoryChips
               categories={categories}
@@ -134,6 +146,13 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
           orderId={activeOrderId}
           currency={currency}
           onClose={() => setActiveOrderId(null)}
+        />
+
+        {/* Waiter / bill / group requests */}
+        <RequestSheet
+          open={requestSheetOpen}
+          onClose={() => setRequestSheetOpen(false)}
+          groupOrderingEnabled={groupOrderingEnabled}
         />
       </div>
     </CartProvider>
