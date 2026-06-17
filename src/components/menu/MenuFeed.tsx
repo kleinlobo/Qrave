@@ -8,6 +8,7 @@ import CartFab from "@/components/cart/CartFab"
 import CartSheet from "@/components/cart/CartSheet"
 import OrderStatusSheet from "@/components/order/OrderStatusSheet"
 import RequestSheet from "@/components/requests/RequestSheet"
+import RecommendationStrip from "./RecommendationStrip"
 import type { MenuCategory, MenuItem } from "@/lib/menu/types"
 
 interface Props {
@@ -30,6 +31,7 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
   const [cartOpen, setCartOpen] = useState(false)
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   const [requestSheetOpen, setRequestSheetOpen] = useState(false)
+  const [activeItemId, setActiveItemId] = useState<string | null>(null)
 
   const feedRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -51,7 +53,10 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
 
       const obs = new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting) setActiveCategoryId(item.categoryId)
+          if (entry.isIntersecting) {
+            setActiveCategoryId(item.categoryId)
+            setActiveItemId(item.id)
+          }
         },
         { root: feed, threshold: 0.5 }
       )
@@ -67,6 +72,11 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
     const firstItem = allItems.find((i) => i.categoryId === categoryId)
     if (!firstItem) return
     const el = itemRefs.current.get(firstItem.id)
+    el?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  function scrollToItem(itemId: string) {
+    const el = itemRefs.current.get(itemId)
     el?.scrollIntoView({ behavior: "smooth" })
   }
 
@@ -146,6 +156,15 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
           orderId={activeOrderId}
           currency={currency}
           onClose={() => setActiveOrderId(null)}
+        />
+
+        {/* AI recommendations strip */}
+        <RecommendationStrip
+          currentItemId={activeItemId}
+          restaurantId={restaurantId}
+          allItems={allItems}
+          currency={currency}
+          onJumpTo={scrollToItem}
         />
 
         {/* Waiter / bill / group requests */}
