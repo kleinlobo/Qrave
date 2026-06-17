@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { formatCurrency } from "@/lib/currency"
 import type { MenuItem } from "@/lib/menu/types"
 
@@ -78,9 +79,11 @@ export default function RecommendationStrip({
               className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/15 px-3 py-2 text-left transition-colors"
             >
               {item.thumbnail_url && (
-                <img
+                <Image
                   src={item.thumbnail_url}
                   alt=""
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
                 />
               )}

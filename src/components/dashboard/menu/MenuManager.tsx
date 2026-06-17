@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { formatCurrency } from "@/lib/currency"
 import CategoryDialog from "./CategoryDialog"
 import ItemDialog from "./ItemDialog"
@@ -185,9 +186,11 @@ export default function MenuManager({ restaurantId, currency, initialCategories,
                   {catItems.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 px-4 py-3">
                       {item.thumbnail_url && (
-                        <img
+                        <Image
                           src={item.thumbnail_url}
                           alt=""
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
                         />
                       )}

@@ -27,7 +27,7 @@ export default function TableManager({ restaurantId, initialTables }: Props) {
     setDialogOpen(true)
   }
 
-  function onSaved(rawTable: { id: string; label: string; qr_token: string; is_active: boolean }, _qrUrl: string) {
+  function onSaved(rawTable: { id: string; label: string; qr_token: string; is_active: boolean }) {
     // The qrUrl comes from the server-generated prop for existing tables.
     // For newly created tables, we derive the URL from the base URL + IDs.
     // Since the signature requires the secret (server-side), we need to call an API

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import {
   Dialog,
@@ -269,9 +270,11 @@ export default function ItemDialog({
           <div className="space-y-1.5">
             <Label>Thumbnail image</Label>
             {thumbnailUrl && (
-              <img
+              <Image
                 src={thumbnailUrl}
                 alt="Thumbnail preview"
+                width={96}
+                height={96}
                 className="h-24 w-24 rounded-lg object-cover border border-border"
               />
             )}
