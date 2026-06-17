@@ -2,8 +2,8 @@ import Image from "next/image"
 import Link from "next/link"
 
 const RESTAURANT_ID = "83caa5e7-291f-42e5-bcf3-49d1c7930e9b"
-const TABLE_ID = "dd68f7b8-1f49-4a0c-8383-9bffc03189c7"
-const TOKEN = "8984eab5bc57213ecbd48bbf6d8228ed0743315905dcd224251b2d1cd46ea945"
+const TABLE_ID = "31d2d967-c3a2-4ea1-9f3c-479ae833c5aa"
+const TOKEN = "ac139c231dfd2e77eff3fbfde4d09f3ec8dc8d84f7e2fefaa4142ba25e3e7c8a"
 const DELIVERY_TOKEN = "7ca90253-9281-4141-9d0e-8b36c79c6fe0"
 
 const DINE_IN_URL = `/menu/${RESTAURANT_ID}/${TABLE_ID}?t=${TOKEN}`
