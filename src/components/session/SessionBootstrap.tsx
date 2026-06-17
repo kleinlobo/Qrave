@@ -67,24 +67,24 @@ export default function SessionBootstrap({
         }
       }
 
-      // Attempt GPS region check (best effort, 8s timeout baked into getGPSPosition)
+      // Only request GPS if the restaurant has location lock configured —
+      // avoids triggering the permission dialog when geo-lock is disabled.
       let gpsLat: number | undefined
       let gpsLon: number | undefined
 
-      try {
-        const position = await getGPSPosition()
-        gpsLat = position.coords.latitude
-        gpsLon = position.coords.longitude
+      if (restaurantLat != null && restaurantLon != null) {
+        try {
+          const position = await getGPSPosition()
+          gpsLat = position.coords.latitude
+          gpsLon = position.coords.longitude
 
-        // Fast-path client rejection before hitting the server
-        if (restaurantLat != null && restaurantLon != null) {
           if (!isWithinRadius(gpsLat, gpsLon, restaurantLat, restaurantLon, regionLockRadius)) {
             setState({ phase: "region_blocked" })
             return
           }
+        } catch {
+          // GPS unavailable or denied — server falls back to IP geo
         }
-      } catch {
-        // GPS unavailable or denied — server falls back to IP geo
       }
 
       const res = await fetch("/api/session/bootstrap", {
