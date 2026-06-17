@@ -1,14 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import type { Tables } from "@/types"
+export type { StaffRole } from "./roles"
+export { redirectPathForRole } from "./roles"
 
 export type StaffUser = Tables<"staff_users">
-
-export type StaffRole =
-  | "platform_admin"
-  | "owner"
-  | "manager"
-  | "staff"
-  | "kitchen_staff"
 
 // Server-only — call from layouts and Route Handlers.
 export async function getStaffUser(): Promise<StaffUser | null> {
@@ -27,10 +22,4 @@ export async function getStaffUser(): Promise<StaffUser | null> {
     .single()
 
   return data ?? null
-}
-
-export function redirectPathForRole(role: StaffRole): string {
-  if (role === "platform_admin") return "/admin"
-  if (role === "kitchen_staff") return "/kitchen"
-  return "/dashboard"
 }
