@@ -25,6 +25,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <NavLink href="/dashboard/tables">Tables</NavLink>
             <NavLink href="/dashboard/staff">Staff</NavLink>
             <NavLink href="/dashboard/analytics">Analytics</NavLink>
+            <NavLink href="/dashboard/settings">Settings</NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-4">

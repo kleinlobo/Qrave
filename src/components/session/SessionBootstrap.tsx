@@ -17,6 +17,7 @@ interface Props {
   sessionExpiryMinutes: number
   currency: string
   groupOrderingEnabled: boolean
+  whatsappNumber: string | null
   menuCategories: MenuCategory[]
 }
 
@@ -37,6 +38,7 @@ export default function SessionBootstrap({
   sessionExpiryMinutes,
   currency,
   groupOrderingEnabled,
+  whatsappNumber,
   menuCategories,
 }: Props) {
   const [state, setState] = useState<SessionState>({ phase: "booting" })
@@ -171,6 +173,7 @@ export default function SessionBootstrap({
       restaurantId={restaurantId}
       tableLabel={tableLabel}
       groupOrderingEnabled={groupOrderingEnabled}
+      whatsappNumber={whatsappNumber}
     />
   )
 }

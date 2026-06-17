@@ -18,13 +18,14 @@ interface Props {
   restaurantId: string
   tableLabel: string
   groupOrderingEnabled: boolean
+  whatsappNumber?: string | null
 }
 
 interface FlatItem extends MenuItem {
   categoryId: string
 }
 
-export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel, groupOrderingEnabled }: Props) {
+export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel, groupOrderingEnabled, whatsappNumber }: Props) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     categories[0]?.id ?? null
   )
@@ -155,6 +156,7 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
         <OrderStatusSheet
           orderId={activeOrderId}
           currency={currency}
+          whatsappNumber={whatsappNumber}
           onClose={() => setActiveOrderId(null)}
         />
 
