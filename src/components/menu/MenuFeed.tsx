@@ -137,8 +137,8 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
           ))}
         </div>
 
-        {/* Cart FAB */}
-        <CartFab currency={currency} onOpen={() => setCartOpen(true)} />
+        {/* Cart FAB — hidden while cart sheet is open */}
+        <CartFab currency={currency} onOpen={() => setCartOpen(true)} hidden={cartOpen} />
 
         {/* Cart sheet */}
         <CartSheet

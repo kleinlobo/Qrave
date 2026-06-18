@@ -107,7 +107,7 @@ export default function CartSheet({
         </div>
 
         {/* Totals + place order */}
-        <div className="px-5 pb-8 pt-4 space-y-4 border-t border-border bg-background">
+        <div className="px-5 pb-6 pt-4 space-y-4 border-t border-border bg-background">
           <div className="flex justify-between text-sm font-medium text-foreground">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal, currency)}</span>

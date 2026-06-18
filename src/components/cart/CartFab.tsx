@@ -7,12 +7,13 @@ import { formatCurrency } from "@/lib/currency"
 interface Props {
   currency: string
   onOpen: () => void
+  hidden?: boolean
 }
 
-export default function CartFab({ currency, onOpen }: Props) {
+export default function CartFab({ currency, onOpen, hidden }: Props) {
   const { totalItems, subtotal } = useCart()
 
-  if (totalItems === 0) return null
+  if (totalItems === 0 || hidden) return null
 
   return (
     <button
