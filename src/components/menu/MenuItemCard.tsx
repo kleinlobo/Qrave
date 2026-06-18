@@ -49,8 +49,8 @@ export default function MenuItemCard({ item, currency }: Props) {
         </div>
       )}
 
-      {/* Item info + cart controls — bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-5 pb-8 z-10 space-y-3">
+      {/* Item info + cart controls — bottom (pb-28 keeps controls above CartFab) */}
+      <div className="absolute bottom-0 left-0 right-0 px-5 pb-28 z-10 space-y-3">
         <div>
           <h2 className="text-white text-xl font-bold leading-tight">{item.name}</h2>
           {item.description && (
