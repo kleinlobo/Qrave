@@ -101,14 +101,15 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Create new session
+  // Create or replace session (upsert handles the case where an expired/inactive
+  // session row already exists for this user, avoiding duplicate key errors)
   const expiresAt = new Date(
     Date.now() + sessionExpiryMinutes * 60 * 1000
   ).toISOString()
 
   const { data: session, error } = await supabase
     .from("sessions")
-    .insert({
+    .upsert({
       id: user.id,
       restaurant_id: restaurantId,
       table_id: tableId,
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
       region_check_status: regionCheckStatus,
       status: "active",
       expires_at: expiresAt,
-    })
+    }, { onConflict: "id" })
     .select("id, region_check_status")
     .single()
 
