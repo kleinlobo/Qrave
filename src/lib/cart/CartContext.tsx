@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useReducer, type ReactNode } from "react"
+import { createContext, useContext, useReducer, useEffect, useState, type ReactNode } from "react"
 
 export interface CartItem {
   menuItemId: string
@@ -20,6 +20,7 @@ type Action =
   | { type: "REMOVE"; menuItemId: string }
   | { type: "SET_NOTES"; menuItemId: string; notes: string }
   | { type: "CLEAR" }
+  | { type: "RESTORE"; items: CartItem[] }
 
 function reducer(state: CartState, action: Action): CartState {
   switch (action.type) {
@@ -57,6 +58,8 @@ function reducer(state: CartState, action: Action): CartState {
     }
     case "CLEAR":
       return { items: [] }
+    case "RESTORE":
+      return { items: action.items }
   }
 }
 
@@ -64,6 +67,7 @@ interface CartContextValue {
   items: CartItem[]
   totalItems: number
   subtotal: number
+  ready: boolean
   getQuantity: (menuItemId: string) => number
   addItem: (menuItemId: string, name: string, price: number) => void
   decrementItem: (menuItemId: string) => void
@@ -74,13 +78,39 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null)
 
+const STORAGE_KEY = "qrave-cart"
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [] })
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved) as { items: CartItem[] }
+        if (Array.isArray(parsed.items)) {
+          dispatch({ type: "RESTORE", items: parsed.items })
+        }
+      }
+    } catch { /* ignore */ }
+    setHydrated(true)
+  }, [])
+
+  // Persist to localStorage after every change
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: state.items }))
+    } catch { /* ignore */ }
+  }, [state.items, hydrated])
 
   const value: CartContextValue = {
     items: state.items,
     totalItems: state.items.reduce((s, i) => s + i.quantity, 0),
     subtotal: state.items.reduce((s, i) => s + i.price * i.quantity, 0),
+    ready: hydrated,
     getQuantity: (id) => state.items.find((i) => i.menuItemId === id)?.quantity ?? 0,
     addItem: (id, name, price) => dispatch({ type: "ADD", menuItemId: id, name, price }),
     decrementItem: (id) => dispatch({ type: "DECREMENT", menuItemId: id }),

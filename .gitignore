@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated convenience files (not part of version history)
+supabase/combined_migrations.sql
+
+.vercel

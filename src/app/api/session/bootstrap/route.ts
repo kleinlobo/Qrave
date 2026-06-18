@@ -41,37 +41,30 @@ export async function POST(request: NextRequest) {
     gpsLon,
   } = body
 
-  // Determine region check status
+  // Determine region check status.
+  // When the restaurant has no coordinates configured, geo-lock is disabled — treat as in_range.
   let regionCheckStatus: "in_range" | "out_of_range" | "undetermined" = "undetermined"
 
-  if (restaurantLat != null && restaurantLon != null) {
-    if (gpsLat != null && gpsLon != null) {
-      // GPS provided by client — use it
-      regionCheckStatus = isWithinRadius(
-        gpsLat,
-        gpsLon,
-        restaurantLat,
-        restaurantLon,
-        regionLockRadius
-      )
-        ? "in_range"
-        : "out_of_range"
-    } else {
-      // Fall back to IP geolocation (server-side)
-      const ip = getClientIP(request.headers)
-      if (ip) {
-        const ipLoc = await getIPLocation(ip)
-        if (ipLoc) {
-          regionCheckStatus = isWithinRadius(
-            ipLoc.latitude,
-            ipLoc.longitude,
-            restaurantLat,
-            restaurantLon,
-            regionLockRadius
-          )
-            ? "in_range"
-            : "out_of_range"
-        }
+  if (restaurantLat == null || restaurantLon == null) {
+    regionCheckStatus = "in_range"
+  } else if (gpsLat != null && gpsLon != null) {
+    regionCheckStatus = isWithinRadius(gpsLat, gpsLon, restaurantLat, restaurantLon, regionLockRadius)
+      ? "in_range"
+      : "out_of_range"
+  } else {
+    const ip = getClientIP(request.headers)
+    if (ip) {
+      const ipLoc = await getIPLocation(ip)
+      if (ipLoc) {
+        regionCheckStatus = isWithinRadius(
+          ipLoc.latitude,
+          ipLoc.longitude,
+          restaurantLat,
+          restaurantLon,
+          regionLockRadius
+        )
+          ? "in_range"
+          : "out_of_range"
       }
     }
   }

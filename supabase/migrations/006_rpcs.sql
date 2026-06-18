@@ -28,7 +28,12 @@ begin
     raise exception 'Session expired';
   end if;
 
+  -- Only enforce region lock when the restaurant actually has coordinates configured
+  select * into v_restaurant from public.restaurants where id = v_session.restaurant_id;
+
   if v_session.channel = 'dine_in'
+     and v_restaurant.latitude is not null
+     and v_restaurant.longitude is not null
      and coalesce(v_session.region_check_status, 'undetermined') <> 'in_range' then
     raise exception 'Region lock: cannot place an order outside the restaurant';
   end if;
@@ -44,8 +49,6 @@ begin
   if jsonb_array_length(p_items) = 0 then
     raise exception 'Cart is empty';
   end if;
-
-  select * into v_restaurant from public.restaurants where id = v_session.restaurant_id;
 
   insert into public.orders (
     restaurant_id, table_id, session_id, group_id, channel,

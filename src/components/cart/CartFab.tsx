@@ -1,23 +1,23 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart/CartContext"
 import { formatCurrency } from "@/lib/currency"
 
 interface Props {
   currency: string
-  onOpen: () => void
-  hidden?: boolean
 }
 
-export default function CartFab({ currency, onOpen, hidden }: Props) {
+export default function CartFab({ currency }: Props) {
+  const router = useRouter()
   const { totalItems, subtotal } = useCart()
 
-  if (totalItems === 0 || hidden) return null
+  if (totalItems === 0) return null
 
   return (
     <button
-      onClick={onOpen}
+      onClick={() => router.push("/cart")}
       className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%_-_2rem)] max-w-[398px] z-50 flex items-center justify-between rounded-full bg-primary px-5 py-4 shadow-lg active:opacity-90 transition-opacity animate-fade-in"
     >
       <div className="flex items-center gap-2.5">

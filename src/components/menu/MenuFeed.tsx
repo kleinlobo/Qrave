@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { CartProvider } from "@/lib/cart/CartContext"
 import CategoryChips from "./CategoryChips"
 import MenuItemCard from "./MenuItemCard"
 import CartFab from "@/components/cart/CartFab"
-import CartSheet from "@/components/cart/CartSheet"
 import OrderStatusSheet from "@/components/order/OrderStatusSheet"
 import RequestSheet from "@/components/requests/RequestSheet"
 import RecommendationStrip from "./RecommendationStrip"
@@ -29,7 +27,6 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     categories[0]?.id ?? null
   )
-  const [cartOpen, setCartOpen] = useState(false)
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   const [requestSheetOpen, setRequestSheetOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
@@ -41,7 +38,6 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
     cat.items.map((item) => ({ ...item, categoryId: cat.id }))
   )
 
-  // Track active category while scrolling
   useEffect(() => {
     const feed = feedRef.current
     if (!feed || allItems.length === 0) return
@@ -93,89 +89,75 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
   }
 
   return (
-    <CartProvider>
-      <div className="relative h-screen overflow-hidden">
-        {/* Sticky header — restaurant name, table label, category chips */}
-        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-          <div className="pointer-events-auto">
-            <div className="flex items-center justify-between px-5 pt-4 pb-1">
-              <p className="text-white text-sm font-semibold truncate">{restaurantName}</p>
-              <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                <p className="text-white/70 text-xs">Table {tableLabel}</p>
-                <button
-                  onClick={() => setRequestSheetOpen(true)}
-                  aria-label="More options"
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white/90 active:bg-black/60 transition-colors"
-                >
-                  <span className="text-base leading-none">···</span>
-                </button>
-              </div>
+    <div className="relative h-screen overflow-hidden">
+      {/* Sticky header */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+        <div className="pointer-events-auto">
+          <div className="flex items-center justify-between px-5 pt-4 pb-1">
+            <p className="text-white text-sm font-semibold truncate">{restaurantName}</p>
+            <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+              <p className="text-white/70 text-xs">Table {tableLabel}</p>
+              <button
+                onClick={() => setRequestSheetOpen(true)}
+                aria-label="More options"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white/90 active:bg-black/60 transition-colors"
+              >
+                <span className="text-base leading-none">···</span>
+              </button>
             </div>
-            <CategoryChips
-              categories={categories}
-              activeId={activeCategoryId}
-              onSelect={scrollToCategory}
-            />
           </div>
+          <CategoryChips
+            categories={categories}
+            activeId={activeCategoryId}
+            onSelect={scrollToCategory}
+          />
         </div>
-
-        {/* Snap-scroll feed */}
-        <div
-          ref={feedRef}
-          className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hidden"
-        >
-          {allItems.map((item) => (
-            <div
-              key={item.id}
-              ref={(el) => {
-                if (el) itemRefs.current.set(item.id, el)
-                else itemRefs.current.delete(item.id)
-              }}
-            >
-              <MenuItemCard item={item} currency={currency} />
-            </div>
-          ))}
-        </div>
-
-        {/* Cart FAB — hidden while cart sheet is open */}
-        <CartFab currency={currency} onOpen={() => setCartOpen(true)} hidden={cartOpen} />
-
-        {/* Cart sheet */}
-        <CartSheet
-          open={cartOpen}
-          onClose={() => setCartOpen(false)}
-          currency={currency}
-          restaurantId={restaurantId}
-          onOrderPlaced={(orderId) => {
-            setCartOpen(false)
-            setActiveOrderId(orderId)
-          }}
-        />
-
-        {/* Order status sheet */}
-        <OrderStatusSheet
-          orderId={activeOrderId}
-          currency={currency}
-          whatsappNumber={whatsappNumber}
-          onClose={() => setActiveOrderId(null)}
-        />
-
-        {/* AI recommendations strip */}
-        <RecommendationStrip
-          currentItemId={activeItemId}
-          restaurantId={restaurantId}
-          allItems={allItems}
-          currency={currency}
-          onJumpTo={scrollToItem}
-        />
-
-        {/* Waiter / bill / group requests */}
-        <RequestSheet
-          open={requestSheetOpen}
-          onClose={() => setRequestSheetOpen(false)}
-          groupOrderingEnabled={groupOrderingEnabled}
-        />
       </div>
-    </CartProvider>
+
+      {/* Snap-scroll feed */}
+      <div
+        ref={feedRef}
+        className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hidden"
+      >
+        {allItems.map((item) => (
+          <div
+            key={item.id}
+            ref={(el) => {
+              if (el) itemRefs.current.set(item.id, el)
+              else itemRefs.current.delete(item.id)
+            }}
+          >
+            <MenuItemCard item={item} currency={currency} />
+          </div>
+        ))}
+      </div>
+
+      {/* Cart FAB — navigates to /cart page */}
+      <CartFab currency={currency} />
+
+      {/* Order status sheet */}
+      <OrderStatusSheet
+        orderId={activeOrderId}
+        currency={currency}
+        whatsappNumber={whatsappNumber}
+        onClose={() => setActiveOrderId(null)}
+      />
+
+      {/* AI recommendations strip */}
+      <RecommendationStrip
+        currentItemId={activeItemId}
+        restaurantId={restaurantId}
+        allItems={allItems}
+        currency={currency}
+        onJumpTo={scrollToItem}
+      />
+
+      {/* Waiter / bill / group requests */}
+      <RequestSheet
+        open={requestSheetOpen}
+        onClose={() => setRequestSheetOpen(false)}
+        groupOrderingEnabled={groupOrderingEnabled}
+      />
+    </div>
   )
 }
