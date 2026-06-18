@@ -34,11 +34,10 @@ export default async function CartPage() {
     .eq("id", session.restaurant_id)
     .single()
 
-  const { data: table } = await supabase
-    .from("tables")
-    .select("label")
-    .eq("id", session.table_id)
-    .single()
+  const tableId = session.table_id
+  const { data: table } = tableId
+    ? await supabase.from("tables").select("label").eq("id", tableId).single()
+    : { data: null }
 
   return (
     <CartPageClient
