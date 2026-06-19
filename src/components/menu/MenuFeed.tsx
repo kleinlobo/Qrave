@@ -133,7 +133,12 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
       </div>
 
       {/* Cart FAB — navigates to /cart page */}
-      <CartFab currency={currency} />
+      <CartFab
+        currency={currency}
+        restaurantId={restaurantId}
+        restaurantName={restaurantName}
+        tableLabel={tableLabel}
+      />
 
       {/* Order status sheet */}
       <OrderStatusSheet

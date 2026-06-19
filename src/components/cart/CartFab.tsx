@@ -7,17 +7,30 @@ import { formatCurrency } from "@/lib/currency"
 
 interface Props {
   currency: string
+  restaurantId: string
+  restaurantName: string
+  tableLabel: string
 }
 
-export default function CartFab({ currency }: Props) {
+export default function CartFab({ currency, restaurantId, restaurantName, tableLabel }: Props) {
   const router = useRouter()
   const { totalItems, subtotal } = useCart()
 
   if (totalItems === 0) return null
 
+  function openCart() {
+    const params = new URLSearchParams({
+      rid: restaurantId,
+      cur: currency,
+      rname: restaurantName,
+      table: tableLabel,
+    })
+    router.push(`/cart?${params}`)
+  }
+
   return (
     <button
-      onClick={() => router.push("/cart")}
+      onClick={openCart}
       className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%_-_2rem)] max-w-[398px] z-50 flex items-center justify-between rounded-full bg-primary px-5 py-4 shadow-lg active:opacity-90 transition-opacity animate-fade-in"
     >
       <div className="flex items-center gap-2.5">

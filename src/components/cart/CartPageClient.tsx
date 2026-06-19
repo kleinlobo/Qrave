@@ -44,7 +44,13 @@ export default function CartPageClient({ restaurantId, currency, restaurantName,
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      setError(err.error ?? "Failed to place order. Please try again.")
+      const msg: string = err.error ?? "Failed to place order. Please try again."
+      // Session expired — send them back to the menu which will refresh the session
+      if (msg.includes("Session expired") || msg.includes("No active session")) {
+        setError("Your session expired. Go back to the menu and try again.")
+      } else {
+        setError(msg)
+      }
       return
     }
 
@@ -135,8 +141,16 @@ export default function CartPageClient({ restaurantId, currency, restaurantName,
             </p>
 
             {error && (
-              <div className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
+              <div className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive space-y-2">
+                <p>{error}</p>
+                {(error.includes("expired") || error.includes("session")) && (
+                  <button
+                    onClick={() => router.back()}
+                    className="text-xs font-semibold underline underline-offset-2"
+                  >
+                    Go back to menu →
+                  </button>
+                )}
               </div>
             )}
 
