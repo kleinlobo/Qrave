@@ -57,8 +57,7 @@ export default function RequestSheet({ open, onClose, groupOrderingEnabled }: Pr
       {/* data-app="customer" on SheetContent ensures CSS vars resolve inside the Radix portal */}
       <SheetContent
         side="bottom"
-        // @ts-expect-error — custom data attribute forwarded via ...props spread in sheet.tsx
-        data-app="customer"
+        {...{ "data-app": "customer" }}
         className="h-auto rounded-t-2xl pb-10 px-5"
       >
         <SheetHeader className="mb-5 mt-2">
