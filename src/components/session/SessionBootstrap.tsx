@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { getGPSPosition, isWithinRadius } from "@/lib/geo"
 import MenuFeed from "@/components/menu/MenuFeed"
+import OrderStatusBar from "@/components/order/OrderStatusBar"
 import type { MenuCategory } from "@/lib/menu/types"
 
 interface Props {
@@ -128,8 +129,11 @@ export default function SessionBootstrap({
     sessionExpiryMinutes,
   ])
 
+  // Determine the main content for the current phase
+  let content
+
   if (state.phase === "booting") {
-    return (
+    content = (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -137,10 +141,8 @@ export default function SessionBootstrap({
         </div>
       </div>
     )
-  }
-
-  if (state.phase === "region_blocked") {
-    return (
+  } else if (state.phase === "region_blocked") {
+    content = (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center space-y-3 max-w-xs">
           <div className="text-4xl">📍</div>
@@ -152,10 +154,8 @@ export default function SessionBootstrap({
         </div>
       </div>
     )
-  }
-
-  if (state.phase === "error") {
-    return (
+  } else if (state.phase === "error") {
+    content = (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center space-y-3 max-w-xs">
           <p className="text-base font-semibold text-foreground">Something went wrong</p>
@@ -163,17 +163,27 @@ export default function SessionBootstrap({
         </div>
       </div>
     )
+  } else {
+    content = (
+      <MenuFeed
+        categories={menuCategories}
+        currency={currency}
+        restaurantName={restaurantName}
+        restaurantId={restaurantId}
+        tableLabel={tableLabel}
+        groupOrderingEnabled={groupOrderingEnabled}
+        whatsappNumber={whatsappNumber}
+      />
+    )
   }
 
+  // OrderStatusBar is always rendered at this level so it mounts immediately
+  // when the route loads — even during the bootstrap spinner — and can read
+  // qrave-active-order from localStorage right away.
   return (
-    <MenuFeed
-      categories={menuCategories}
-      currency={currency}
-      restaurantName={restaurantName}
-      restaurantId={restaurantId}
-      tableLabel={tableLabel}
-      groupOrderingEnabled={groupOrderingEnabled}
-      whatsappNumber={whatsappNumber}
-    />
+    <>
+      <OrderStatusBar />
+      {content}
+    </>
   )
 }

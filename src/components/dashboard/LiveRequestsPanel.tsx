@@ -27,8 +27,20 @@ export default function LiveRequestsPanel({ restaurantId, initialRequests }: Pro
   useEffect(() => {
     const supabase = createClient()
 
-    // No filter on the subscription — filtered postgres_changes can silently fail
-    // when a BEFORE INSERT trigger modifies the row. We filter by restaurantId client-side.
+    async function fetchRequests() {
+      const { data } = await supabase
+        .from("requests")
+        .select("id, request_type, requested_at, acknowledged_at, table_id, tables(label)")
+        .eq("restaurant_id", restaurantId)
+        .is("acknowledged_at", null)
+        .order("requested_at", { ascending: true })
+      if (data) setRequests(data as StaffRequest[])
+    }
+
+    // Poll every 10 seconds as a reliable fallback for Realtime
+    const pollInterval = setInterval(fetchRequests, 10_000)
+
+    // Also try Realtime — no filter to avoid silent failures from BEFORE INSERT triggers
     const channel = supabase
       .channel(`live-requests-${restaurantId}`)
       .on(
@@ -65,7 +77,10 @@ export default function LiveRequestsPanel({ restaurantId, initialRequests }: Pro
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      clearInterval(pollInterval)
+      supabase.removeChannel(channel)
+    }
   }, [restaurantId])
 
   async function acknowledge(id: string) {

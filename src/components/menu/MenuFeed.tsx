@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import CategoryChips from "./CategoryChips"
 import MenuItemCard from "./MenuItemCard"
 import CartFab from "@/components/cart/CartFab"
-import OrderStatusBar from "@/components/order/OrderStatusBar"
 import RequestSheet from "@/components/requests/RequestSheet"
 import type { MenuCategory } from "@/lib/menu/types"
 
@@ -123,9 +122,6 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
         restaurantName={restaurantName}
         tableLabel={tableLabel}
       />
-
-      {/* Floating order status bar */}
-      <OrderStatusBar />
 
       {/* Help sheet */}
       <RequestSheet
