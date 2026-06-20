@@ -25,43 +25,33 @@ export default function LiveRequestsPanel({ restaurantId, initialRequests }: Pro
   const [acknowledging, setAcknowledging] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const supabase = createClient()
-
+    // Poll the server-side API (service role) so requests always appear
+    // regardless of the browser client's auth state or RLS.
     async function fetchRequests() {
-      const { data } = await supabase
-        .from("requests")
-        .select("id, request_type, requested_at, acknowledged_at, table_id, tables(label)")
-        .eq("restaurant_id", restaurantId)
-        .is("acknowledged_at", null)
-        .order("requested_at", { ascending: true })
-      if (data) setRequests(data as StaffRequest[])
+      try {
+        const res = await fetch("/api/dashboard/requests")
+        if (!res.ok) return
+        const { requests: data } = await res.json() as { requests: StaffRequest[] }
+        setRequests(data)
+      } catch {}
     }
 
-    // Poll every 10 seconds as a reliable fallback for Realtime
-    const pollInterval = setInterval(fetchRequests, 10_000)
+    fetchRequests() // immediate first fetch
+    const pollInterval = setInterval(fetchRequests, 8_000)
 
-    // Also try Realtime — no filter to avoid silent failures from BEFORE INSERT triggers
+    // Also try Realtime for instant updates (best-effort — may not fire if
+    // the publication isn't set up on the live DB or auth is wrong).
+    const supabase = createClient()
     const channel = supabase
       .channel(`live-requests-${restaurantId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "requests" },
-        async (payload) => {
+        (payload) => {
           const newRow = payload.new as { id: string; restaurant_id: string }
           if (newRow.restaurant_id !== restaurantId) return
-
-          const { data } = await supabase
-            .from("requests")
-            .select("id, request_type, requested_at, acknowledged_at, table_id, tables(label)")
-            .eq("id", newRow.id)
-            .single()
-
-          if (data && !data.acknowledged_at) {
-            setRequests((prev) => {
-              if (prev.some((r) => r.id === data.id)) return prev
-              return [data as StaffRequest, ...prev]
-            })
-          }
+          // Re-fetch from server to get fully populated row (including table label)
+          fetchRequests()
         }
       )
       .on(
