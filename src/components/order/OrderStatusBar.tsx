@@ -24,14 +24,23 @@ export default function OrderStatusBar() {
   const [ctx, setCtx] = useState<OrderCtx | null>(null)
   const [status, setStatus] = useState<string>("pending")
 
-  // Load persisted order from localStorage
+  // Load persisted order from localStorage.
+  // Also re-check on visibilitychange so the bar appears when the user navigates
+  // back from the cart page (Next.js may serve the menu from router cache without
+  // remounting, so a single on-mount effect is not enough).
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("qrave-active-order")
-      if (!saved) return
-      const parsed = JSON.parse(saved) as OrderCtx
-      setCtx(parsed)
-    } catch {}
+    function checkStorage() {
+      try {
+        const saved = localStorage.getItem("qrave-active-order")
+        if (!saved) { setCtx(null); return }
+        const parsed = JSON.parse(saved) as OrderCtx
+        setCtx(parsed)
+      } catch {}
+    }
+
+    checkStorage()
+    document.addEventListener("visibilitychange", checkStorage)
+    return () => document.removeEventListener("visibilitychange", checkStorage)
   }, [])
 
   // Subscribe to order status once ctx is set
