@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceClient } from "@/lib/supabase/server"
 
 const VALID_TYPES = ["waiter_call", "bill_request"] as const
 type RequestType = (typeof VALID_TYPES)[number]
+
+const DB_TYPE_MAP: Record<RequestType, "waiter" | "bill"> = {
+  waiter_call: "waiter",
+  bill_request: "bill",
+}
 
 export async function POST(request: NextRequest) {
   const supabase = createClient()
@@ -41,13 +46,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Requests require a dine-in session" }, { status: 422 })
   }
 
-  const { data, error } = await supabase
+  // Use service role for the insert so the set_request_context trigger
+  // (SECURITY INVOKER) can SELECT the session row without RLS interference.
+  const serviceSupabase = createServiceClient()
+  const { data, error } = await serviceSupabase
     .from("requests")
     .insert({
       session_id: user.id,
       restaurant_id: session.restaurant_id,
       table_id: session.table_id,
-      request_type: body.requestType,
+      request_type: DB_TYPE_MAP[body.requestType as RequestType],
     })
     .select("id")
     .single()
