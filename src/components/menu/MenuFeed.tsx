@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import CategoryChips from "./CategoryChips"
 import MenuItemCard from "./MenuItemCard"
 import CartFab from "@/components/cart/CartFab"
-import OrderStatusSheet from "@/components/order/OrderStatusSheet"
+import OrderStatusBar from "@/components/order/OrderStatusBar"
 import RequestSheet from "@/components/requests/RequestSheet"
-import RecommendationStrip from "./RecommendationStrip"
-import type { MenuCategory, MenuItem } from "@/lib/menu/types"
+import type { MenuCategory } from "@/lib/menu/types"
 
 interface Props {
   categories: MenuCategory[]
@@ -19,120 +18,105 @@ interface Props {
   whatsappNumber?: string | null
 }
 
-interface FlatItem extends MenuItem {
-  categoryId: string
-}
-
-export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel, groupOrderingEnabled, whatsappNumber }: Props) {
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
-    categories[0]?.id ?? null
-  )
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
+export default function MenuFeed({ categories, currency, restaurantName, restaurantId, tableLabel, groupOrderingEnabled }: Props) {
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(categories[0]?.id ?? null)
   const [requestSheetOpen, setRequestSheetOpen] = useState(false)
-  const [activeItemId, setActiveItemId] = useState<string | null>(null)
 
   const feedRef = useRef<HTMLDivElement>(null)
-  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-
-  const allItems: FlatItem[] = categories.flatMap((cat) =>
-    cat.items.map((item) => ({ ...item, categoryId: cat.id }))
-  )
+  const categoryRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   useEffect(() => {
     const feed = feedRef.current
-    if (!feed || allItems.length === 0) return
+    if (!feed || categories.length === 0) return
 
     const observers: IntersectionObserver[] = []
 
-    allItems.forEach((item) => {
-      const el = itemRefs.current.get(item.id)
+    categories.forEach((cat) => {
+      const el = categoryRefs.current.get(cat.id)
       if (!el) return
 
       const obs = new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting) {
-            setActiveCategoryId(item.categoryId)
-            setActiveItemId(item.id)
-          }
+          if (entry.isIntersecting) setActiveCategoryId(cat.id)
         },
-        { root: feed, threshold: 0.5 }
+        { root: feed, threshold: 0, rootMargin: "0px 0px -75% 0px" }
       )
       obs.observe(el)
       observers.push(obs)
     })
 
     return () => observers.forEach((o) => o.disconnect())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allItems.length])
+  }, [categories])
 
   function scrollToCategory(categoryId: string) {
-    const firstItem = allItems.find((i) => i.categoryId === categoryId)
-    if (!firstItem) return
-    const el = itemRefs.current.get(firstItem.id)
-    el?.scrollIntoView({ behavior: "smooth" })
+    const el = categoryRefs.current.get(categoryId)
+    if (!el || !feedRef.current) return
+    const feedTop = feedRef.current.getBoundingClientRect().top
+    const elTop = el.getBoundingClientRect().top
+    feedRef.current.scrollBy({ top: elTop - feedTop - 8, behavior: "smooth" })
   }
 
-  function scrollToItem(itemId: string) {
-    const el = itemRefs.current.get(itemId)
-    el?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  if (allItems.length === 0) {
+  if (categories.length === 0 || categories.every((c) => c.items.length === 0)) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center space-y-2">
           <p className="text-lg font-semibold text-foreground">{restaurantName}</p>
-          <p className="text-sm text-foreground-muted">The menu isn&apos;t available yet.</p>
+          <p className="text-sm text-muted-foreground">The menu isn&apos;t available yet.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative flex flex-col h-screen bg-background">
       {/* Sticky header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-        <div className="pointer-events-auto">
-          <div className="flex items-center justify-between px-5 pt-4 pb-1">
-            <p className="text-white text-sm font-semibold truncate">{restaurantName}</p>
-            <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-              <p className="text-white/70 text-xs">Table {tableLabel}</p>
-              <button
-                onClick={() => setRequestSheetOpen(true)}
-                aria-label="More options"
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white/90 active:bg-black/60 transition-colors"
-              >
-                <span className="text-base leading-none">···</span>
-              </button>
-            </div>
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div>
+            <p className="text-foreground font-bold text-base leading-tight">{restaurantName}</p>
+            <p className="text-muted-foreground text-xs">Table {tableLabel}</p>
           </div>
-          <CategoryChips
-            categories={categories}
-            activeId={activeCategoryId}
-            onSelect={scrollToCategory}
-          />
+          <button
+            onClick={() => setRequestSheetOpen(true)}
+            aria-label="Help"
+            className="flex h-8 items-center justify-center rounded-full bg-primary px-4 text-primary-foreground text-xs font-semibold active:opacity-80 transition-opacity"
+          >
+            Help
+          </button>
         </div>
+        <CategoryChips
+          categories={categories}
+          activeId={activeCategoryId}
+          onSelect={scrollToCategory}
+        />
       </div>
 
-      {/* Snap-scroll feed */}
-      <div
-        ref={feedRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hidden"
-      >
-        {allItems.map((item) => (
+      {/* Scrollable feed */}
+      <div ref={feedRef} className="flex-1 overflow-y-auto pb-36">
+        {categories.map((cat) => (
           <div
-            key={item.id}
+            key={cat.id}
             ref={(el) => {
-              if (el) itemRefs.current.set(item.id, el)
-              else itemRefs.current.delete(item.id)
+              if (el) categoryRefs.current.set(cat.id, el)
+              else categoryRefs.current.delete(cat.id)
             }}
           >
-            <MenuItemCard item={item} currency={currency} />
+            <h2 className="px-4 pt-5 pb-3 text-base font-bold text-foreground">
+              {cat.name}
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                {cat.items.length} item{cat.items.length !== 1 ? "s" : ""}
+              </span>
+            </h2>
+            <div className="grid grid-cols-2 gap-3 px-4">
+              {cat.items.map((item) => (
+                <MenuItemCard key={item.id} item={item} currency={currency} />
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Cart FAB — navigates to /cart page */}
+      {/* Cart FAB */}
       <CartFab
         currency={currency}
         restaurantId={restaurantId}
@@ -140,24 +124,10 @@ export default function MenuFeed({ categories, currency, restaurantName, restaur
         tableLabel={tableLabel}
       />
 
-      {/* Order status sheet */}
-      <OrderStatusSheet
-        orderId={activeOrderId}
-        currency={currency}
-        whatsappNumber={whatsappNumber}
-        onClose={() => setActiveOrderId(null)}
-      />
+      {/* Floating order status bar */}
+      <OrderStatusBar />
 
-      {/* AI recommendations strip */}
-      <RecommendationStrip
-        currentItemId={activeItemId}
-        restaurantId={restaurantId}
-        allItems={allItems}
-        currency={currency}
-        onJumpTo={scrollToItem}
-      />
-
-      {/* Waiter / bill / group requests */}
+      {/* Help sheet */}
       <RequestSheet
         open={requestSheetOpen}
         onClose={() => setRequestSheetOpen(false)}
