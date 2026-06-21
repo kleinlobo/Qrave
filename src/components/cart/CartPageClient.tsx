@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ShoppingBag } from "lucide-react"
+import { ChevronLeft, ShoppingBag, CheckCircle2, ChefHat, Bell } from "lucide-react"
 import { useCart } from "@/lib/cart/CartContext"
 import { formatCurrency } from "@/lib/currency"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
+import { createClient } from "@/lib/supabase/client"
 
 interface Props {
   restaurantId: string
@@ -15,11 +16,48 @@ interface Props {
   tableLabel: string
 }
 
+const STEPS = [
+  { key: "pending",   label: "Order received",   sub: "The restaurant has your order",    icon: CheckCircle2 },
+  { key: "preparing", label: "Being prepared",   sub: "The kitchen is working on it",     icon: ChefHat },
+  { key: "ready",     label: "Ready!",           sub: "Your order is ready to be served", icon: Bell },
+] as const
+
+const STATUS_ORDER = ["pending", "preparing", "ready", "delivered"]
+
 export default function CartPageClient({ restaurantId, currency, restaurantName, tableLabel }: Props) {
   const router = useRouter()
   const { items, subtotal, totalItems, ready, addItem, decrementItem, removeItem, setNotes, clear } = useCart()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
+  const [orderStatus, setOrderStatus] = useState<string>("pending")
+
+  // Subscribe to real-time order status once an order is placed
+  useEffect(() => {
+    if (!placedOrderId) return
+    const supabase = createClient()
+
+    supabase
+      .from("orders")
+      .select("status")
+      .eq("id", placedOrderId)
+      .single()
+      .then(({ data }) => { if (data) setOrderStatus(data.status) })
+
+    const channel = supabase
+      .channel(`order-status-${placedOrderId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${placedOrderId}` },
+        (payload) => {
+          const updated = payload.new as { status: string }
+          if (updated.status) setOrderStatus(updated.status)
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [placedOrderId])
 
   async function handlePlaceOrder() {
     if (items.length === 0 || submitting) return
@@ -45,19 +83,27 @@ export default function CartPageClient({ restaurantId, currency, restaurantName,
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       const msg: string = err.error ?? "Failed to place order. Please try again."
-      // Session expired — send them back to the menu which will refresh the session
-      if (msg.includes("Session expired") || msg.includes("No active session")) {
-        setError("Your session expired. Go back to the menu and try again.")
-      } else {
-        setError(msg)
-      }
+      setError(
+        msg.includes("Session expired") || msg.includes("No active session")
+          ? "Your session expired. Go back to the menu and try again."
+          : msg
+      )
       return
     }
 
+    const { orderId } = await res.json()
+    // Persist order context so the floating status bar in the menu can track it
+    try {
+      localStorage.setItem("qrave-active-order", JSON.stringify({
+        orderId, restaurantId, restaurantName, tableLabel, currency,
+      }))
+    } catch {}
     clear()
-    router.back()
+    setPlacedOrderId(orderId)
+    setOrderStatus("pending")
   }
 
+  // ─── Loading state ────────────────────────────────────────────────────────
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -66,6 +112,100 @@ export default function CartPageClient({ restaurantId, currency, restaurantName,
     )
   }
 
+  // ─── Order tracker ────────────────────────────────────────────────────────
+  if (placedOrderId) {
+    const currentIdx = STATUS_ORDER.indexOf(orderStatus)
+    const isReady = orderStatus === "ready" || orderStatus === "delivered"
+
+    return (
+      <div className="flex flex-col min-h-screen bg-background">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-border">
+          <div className="flex-1">
+            <h1 className="text-base font-bold text-foreground">Order status</h1>
+            <p className="text-xs text-muted-foreground">
+              {restaurantName}{tableLabel ? ` · Table ${tableLabel}` : ""}
+            </p>
+          </div>
+        </div>
+
+        {/* Status tracker */}
+        <div className="flex-1 flex flex-col justify-center px-6 py-10 gap-0">
+          {/* Ready celebration banner */}
+          {isReady && (
+            <div className="mb-8 rounded-2xl bg-primary/10 px-5 py-4 text-center">
+              <p className="text-2xl mb-1">🎉</p>
+              <p className="font-bold text-primary text-base">Your order is ready!</p>
+              <p className="text-xs text-muted-foreground mt-1">A staff member will bring it to your table shortly.</p>
+            </div>
+          )}
+
+          {/* Steps */}
+          <div className="flex flex-col gap-0">
+            {STEPS.map((step, idx) => {
+              const stepIdx = STATUS_ORDER.indexOf(step.key)
+              const done = currentIdx > stepIdx
+              const active = currentIdx === stepIdx
+              const Icon = step.icon
+
+              return (
+                <div key={step.key} className="flex gap-4">
+                  {/* Icon + connector line */}
+                  <div className="flex flex-col items-center">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors ${
+                      done    ? "border-primary bg-primary" :
+                      active  ? "border-primary bg-primary/10" :
+                                "border-border bg-muted"
+                    }`}>
+                      <Icon
+                        size={18}
+                        className={done ? "text-primary-foreground" : active ? "text-primary" : "text-muted-foreground"}
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    {idx < STEPS.length - 1 && (
+                      <div className={`w-0.5 h-10 mt-0 ${done ? "bg-primary" : "bg-border"}`} />
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div className={`pb-8 pt-2 flex-1 min-w-0 ${idx === STEPS.length - 1 ? "pb-0" : ""}`}>
+                    <p className={`text-sm font-semibold leading-tight ${
+                      active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
+                    }`}>
+                      {step.label}
+                      {active && !isReady && (
+                        <span className="ml-2 inline-flex gap-0.5">
+                          <span className="animate-bounce delay-0  inline-block w-1 h-1 rounded-full bg-primary" style={{ animationDelay: "0ms" }} />
+                          <span className="animate-bounce delay-150 inline-block w-1 h-1 rounded-full bg-primary" style={{ animationDelay: "150ms" }} />
+                          <span className="animate-bounce delay-300 inline-block w-1 h-1 rounded-full bg-primary" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      )}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${active || done ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+                      {step.sub}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-border px-4 pt-4 pb-10 space-y-3">
+          <button
+            onClick={() => router.back()}
+            className="w-full rounded-full bg-primary py-4 text-sm font-bold text-primary-foreground active:opacity-80 transition-opacity"
+          >
+            Order more items
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Cart ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
@@ -168,6 +308,8 @@ export default function CartPageClient({ restaurantId, currency, restaurantName,
   )
 }
 
+// ─── Cart item row ──────────────────────────────────────────────────────────
+
 interface CartItemRowProps {
   item: { menuItemId: string; name: string; price: number; quantity: number; notes?: string }
   currency: string
@@ -183,7 +325,6 @@ function CartItemRow({ item, currency, onAdd, onDecrement, onRemove, onNotesChan
   return (
     <div className="py-4 space-y-3">
       <div className="flex items-center gap-3">
-        {/* Qty controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={item.quantity === 1 ? onRemove : onDecrement}
@@ -204,7 +345,6 @@ function CartItemRow({ item, currency, onAdd, onDecrement, onRemove, onNotesChan
           </button>
         </div>
 
-        {/* Name + price */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{item.name}</p>
           <p className="text-xs text-muted-foreground">
@@ -212,7 +352,6 @@ function CartItemRow({ item, currency, onAdd, onDecrement, onRemove, onNotesChan
           </p>
         </div>
 
-        {/* Line total */}
         <div className="text-right flex-shrink-0">
           <p className="text-sm font-bold text-foreground">
             {formatCurrency(item.price * item.quantity, currency)}

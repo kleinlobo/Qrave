@@ -13,6 +13,19 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Qrave",
   description: "Scan • Order • Enjoy",
+  openGraph: {
+    title: "Qrave",
+    description: "Scan • Order • Enjoy",
+    siteName: "Qrave",
+    type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Qrave — Scan • Order • Enjoy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Qrave",
+    description: "Scan • Order • Enjoy",
+    images: ["/og-image.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

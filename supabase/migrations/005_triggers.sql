@@ -63,7 +63,9 @@ create trigger trg_protect_restaurant_admin_columns
 create or replace function public.protect_session_columns()
 returns trigger language plpgsql as $$
 begin
-  if current_setting('app.bypass_session_protection', true) = 'on' then
+  -- Bypass: explicit override, or service-role (auth.uid() is null means no user context)
+  if current_setting('app.bypass_session_protection', true) = 'on'
+     or auth.uid() is null then
     new.last_active_at := now();
     return new;
   end if;

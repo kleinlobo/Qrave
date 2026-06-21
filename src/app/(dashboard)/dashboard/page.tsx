@@ -1,6 +1,7 @@
 import { getStaffUser } from "@/lib/auth/get-staff-user"
 import { createClient } from "@/lib/supabase/server"
 import LiveOrderBoard from "@/components/dashboard/LiveOrderBoard"
+import LiveRequestsPanel from "@/components/dashboard/LiveRequestsPanel"
 import type { LiveOrder } from "@/components/dashboard/OrderCard"
 
 const ACTIVE_STATUSES = ["pending", "preparing", "ready"]
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
   if (!restaurantId) return null
   const supabase = createClient()
 
-  const [{ data: restaurant }, { data: orders }] = await Promise.all([
+  const [{ data: restaurant }, { data: orders }, { data: requests }] = await Promise.all([
     supabase
       .from("restaurants")
       .select("name, currency")
@@ -30,6 +31,13 @@ export default async function DashboardPage() {
       .eq("restaurant_id", restaurantId)
       .in("status", ACTIVE_STATUSES)
       .order("submitted_at", { ascending: true }),
+
+    supabase
+      .from("requests")
+      .select("id, request_type, requested_at, acknowledged_at, table_id, tables(label)")
+      .eq("restaurant_id", restaurantId)
+      .is("acknowledged_at", null)
+      .order("requested_at", { ascending: true }),
   ])
 
   const currency = restaurant?.currency ?? "USD"
@@ -42,6 +50,11 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">Live orders</p>
         </div>
       </div>
+
+      <LiveRequestsPanel
+        restaurantId={restaurantId}
+        initialRequests={(requests ?? []) as Parameters<typeof LiveRequestsPanel>[0]["initialRequests"]}
+      />
 
       <LiveOrderBoard
         restaurantId={restaurantId}

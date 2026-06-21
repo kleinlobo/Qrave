@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceClient } from "@/lib/supabase/server"
 import { getClientIP, getIPLocation, isWithinRadius } from "@/lib/geo"
 
 interface BootstrapBody {
@@ -95,12 +95,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Create or replace session (upsert handles the case where an expired/inactive
-  // session row already exists for this user, avoiding duplicate key errors)
+  // session row already exists for this user, avoiding duplicate key errors).
+  // Must use service-role client: RLS has no INSERT policy on sessions (by design).
+  const serviceSupabase = createServiceClient()
   const expiresAt = new Date(
     Date.now() + sessionExpiryMinutes * 60 * 1000
   ).toISOString()
 
-  const { data: session, error } = await supabase
+  const { data: session, error } = await serviceSupabase
     .from("sessions")
     .upsert({
       id: user.id,
